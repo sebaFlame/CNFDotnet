@@ -10,11 +10,12 @@ namespace CNFDotnet.Analysis.Grammar
         public IList<Token> Right => this._right;
 
         internal CNFGrammar Grammar { get; set; }
+        public int Index { get; private set; }
 
         private Token _left;
         private IList<Token> _right;
 
-        private Production (Token? left)
+        private Production (Token? left, int index)
         {
             if (!left.HasValue)
             {
@@ -27,9 +28,10 @@ namespace CNFDotnet.Analysis.Grammar
             }
 
             this._left = left.Value;
+            this.Index = index;
         }
 
-        private Production (Token left)
+        private Production (Token left, int index)
         {
             if(this._left.TokenType != TokenType.STRING)
             {
@@ -37,14 +39,15 @@ namespace CNFDotnet.Analysis.Grammar
             }
 
             this._left = left;
+            this.Index = index;
         }
 
-        public Production(Token left, params Token[] right)
-            : this(left, right as IList<Token>)
+        public Production(Token left, int index,  params Token[] right)
+            : this(left, right as IList<Token>, index)
         { }
 
-        public Production(Token left, IList<Token> right)
-            : this(left)
+        public Production(Token left, IList<Token> right, int index)
+            : this(left, index)
         {
             if(right.Any(x => x.TokenType != TokenType.STRING))
             {
@@ -54,8 +57,8 @@ namespace CNFDotnet.Analysis.Grammar
             this._right = right;
         }
 
-        public Production(Token? left, IList<Token> right)
-            :this(left)
+        public Production(Token? left, IList<Token> right, int index)
+            :this(left, index)
         {
             if(right.Any(x => x.TokenType != TokenType.STRING))
             {
@@ -65,7 +68,7 @@ namespace CNFDotnet.Analysis.Grammar
             this._right = right;
         }
 
-        public static Production CreateProduction(IEnumerable<Token> tokens)
+        public static Production CreateProduction(IEnumerable<Token> tokens, int index = 0)
         {
             List<Token> left = new List<Token>();
             List<Token> right = new List<Token>();
@@ -102,13 +105,14 @@ namespace CNFDotnet.Analysis.Grammar
                 }
             }
 
-            return new Production(left.Single(), right);
+            return new Production(left.Single(), right, index);
         }
 
         public static IEnumerable<Production> CreateProductions(IEnumerable<Token> tokens)
         {
             List<Token> right = new List<Token>();
             List<Token> left = new List<Token>();
+            int index = 0;
 
             List<Token> lrTokens = left;
 
@@ -137,13 +141,13 @@ namespace CNFDotnet.Analysis.Grammar
                 }
                 else if(token.TokenType == TokenType.CHOICE)
                 {
-                    yield return new Production(left.Single(), right);
+                    yield return new Production(left.Single(), right, index++);
                     right = new List<Token>();
                     lrTokens = right;
                 }
                 else if(token.TokenType == TokenType.EOL)
                 {
-                    yield return new Production(left.Single(), right);
+                    yield return new Production(left.Single(), right, index++);
 
                     left.Clear();
                     right = new List<Token>();
@@ -151,7 +155,7 @@ namespace CNFDotnet.Analysis.Grammar
                 }
                 else if(token.TokenType == TokenType.EOF)
                 {
-                    yield return new Production(left.Single(), right);
+                    yield return new Production(left.Single(), right, index++);
                     break;
                 }
             }

@@ -76,13 +76,45 @@ namespace CNFDotnet.Analysis.Parsing.LR
             return states;
         }
 
-        //public void ClassifyLR_1()
-        //{
-        //}
+        public void ClassifyLR1<T1Action>(IParsingTable<T1Action> table)
+            where T1Action : BaseLR1Action
+        {
+            foreach(T1Action action in table)
+            {
+                foreach(KeyValuePair<Token, LR1ActionItem>  kv in action)
+                {
+                    if(kv.Value.Reduce is not null
+                       && kv.Value.Reduce.Count > 1)
+                    {
+                        throw new LR1ClassificationException("Table contains a reduce-reduce conflict");
+                    }
 
-        //public void AddReduceAction()
-        //{
-        //}
+                    if(kv.Value.Shift is not null
+                       && kv.Value.Reduce is not null
+                       && kv.Value.Reduce.Count > 0)
+                    {
+                        throw new LR1ClassificationException("Table contains a shift-reduce conflict");
+                    }
+                }
+            }
+        }
+
+        protected void AddReduceAction(BaseLR1Action actions, Token token, Production production)
+        {
+            LR1ActionItem actionItem;
+
+            if(!actions.TryGetValue(token, out actionItem))
+            {
+                actions.Add(token, (actionItem = new LR1ActionItem()));
+            }
+
+            if(actionItem.Reduce is null)
+            {
+                actionItem.Reduce = new List<Production>();
+            }
+
+            actionItem.Reduce.Add(production);
+        }
 
         //public void CollapseLookAheads()
         //{

@@ -3,7 +3,7 @@ using System;
 using CNFDotnet.Analysis.Grammar;
 using CNFDotnet.Analysis.Parsing.LR;
 
-namespace CNFDotnet.Analysis.Parsing.LR.LR_0
+namespace CNFDotnet.Analysis.Parsing.LR
 {
     public class LR0KernelItem : BaseKernelItem
     {

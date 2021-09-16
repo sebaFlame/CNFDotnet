@@ -318,7 +318,7 @@ namespace CNFDotnet.Analysis.Grammar
 
             foreach (Production production in this._productions)
             {
-                for (int j = production.Right.Count - 1; j > 0; j--)
+                for (int j = production.Right.Count - 1; j >= 0; j--)
                 {
                     if (this._nonTerminals.Contains(production.Right[j]))
                     {
@@ -335,7 +335,7 @@ namespace CNFDotnet.Analysis.Grammar
             this._followSet = Relation.Propagate(immediate, propagation);
         }
 
-        public IEnumerable<Token> GetFirst (IList<Token> symbols)
+        public IEnumerable<Token> GetFirst (IEnumerable<Token> symbols)
         {
             foreach (Token s in symbols)
             {

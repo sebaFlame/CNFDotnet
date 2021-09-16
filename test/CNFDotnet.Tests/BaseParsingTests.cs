@@ -7,7 +7,9 @@ using Xunit.Abstractions;
 using CNFDotnet.Analysis.Grammar;
 using CNFDotnet.Analysis.Parsing;
 using CNFDotnet.Analysis.Parsing.LL;
-using CNFDotnet.Analysis.Parsing.LR.LR_0;
+using CNFDotnet.Analysis.Parsing.LR.LR0;
+using CNFDotnet.Analysis.Parsing.LR.SLR1;
+using CNFDotnet.Analysis.Parsing.LR.LR1;
 
 namespace CNFDotnet.Tests
 {
@@ -75,5 +77,11 @@ namespace CNFDotnet.Tests
 
         protected IParsing<IAction> CreateLR0Parsing (CNFGrammar cnfGrammar)
             => new LR0Parsing(cnfGrammar);
+
+        protected IParsing<IAction> CreateSLR1Parsing (CNFGrammar cnfGrammar)
+            => new SLR1Parsing(cnfGrammar);
+
+        protected IParsing<IAction> CreateLR1Parsing(CNFGrammar cnfGrammar)
+            => new LR1Parsing(cnfGrammar);
     }
 }

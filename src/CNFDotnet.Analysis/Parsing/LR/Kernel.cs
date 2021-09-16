@@ -77,7 +77,58 @@ namespace CNFDotnet.Analysis.Parsing.LR
                 return false;
             }
 
-            return Enumerable.SequenceEqual(this, other);
+            //Kernel sequences can be in random order
+//            Dictionary<BaseKernelItem, int> cnt = new Dictionary<BaseKernelItem, int>();
+//            foreach(BaseKernelItem item in this)
+//            {
+//                if(cnt.ContainsKey(item))
+//                {
+//                    cnt[item]++;
+//                }
+//                else
+//                {
+//                    cnt.Add(item, 1);
+//                }
+//            }
+//
+//            foreach(BaseKernelItem item in other)
+//            {
+//                if(cnt.ContainsKey(item))
+//                {
+//                    cnt[item]--;
+//                }
+//                else
+//                {
+//                    return false;
+//                }
+//            }
+//
+//            return cnt.Values.All(c => c == 0);
+        
+            if(this.Count != other.Count)
+            {
+                return false;
+            }
+
+            int i, j;
+
+            for(i = 0; i < this.Count; i++)
+            {
+                for(j = 0; j < other.Count; j++)
+                {
+                    if(this[i].Equals(other[j]))
+                    {
+                        break;
+                    }
+                }
+
+                if(j == other.Count)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public override bool Equals(object? obj)
@@ -89,5 +140,8 @@ namespace CNFDotnet.Analysis.Parsing.LR
 
             return this.Equals(other);
         }
+
+        public override int GetHashCode()
+            => this._items.GetHashCode();
     }
 }
