@@ -6,24 +6,25 @@ using CNFDotnet.Analysis.Parsing;
 
 namespace CNFDotnet.Analysis.Parsing.LR
 {
-    public abstract class BaseLRParsing<TAction> : BaseParsing<TAction>
+    public abstract class BaseLRParsing<TAction, TKernelItem> : BaseParsing<TAction>
         where TAction : class, IAction
+        where TKernelItem : BaseKernelItem
     {
-        public IList<State> Automaton { get; private set; }
+        public IList<State<TKernelItem>> Automaton { get; protected set; }
 
         protected BaseLRParsing (CNFGrammar cnfGrammar)
             : base (cnfGrammar)
         { }
 
         #region abstract implementation
-        protected abstract Kernel CreateKernel ();
+        protected abstract Kernel<TKernelItem> CreateKernel ();
 
-        protected abstract Kernel CreateClosure (Kernel kernel);
+        protected abstract Kernel<TKernelItem> CreateClosure (Kernel<TKernelItem> kernel);
 
-        protected abstract IDictionary<Token, Kernel> CreateTransitions (Kernel closure);
+        protected abstract IDictionary<Token, Kernel<TKernelItem>> CreateTransitions (Kernel<TKernelItem> closure);
         #endregion
 
-        protected IList<State> CreateAutomaton ()
+        public virtual IList<State<TKernelItem>> CreateAutomaton ()
         {
             if (this.Automaton is not null)
             {
@@ -31,12 +32,12 @@ namespace CNFDotnet.Analysis.Parsing.LR
             }
 
             int s = 0, l, i;
-            List<State> states = new List<State>();
-            State state;
-            IDictionary<Token, Kernel> transitions;
-            Kernel kernel;
+            List<State<TKernelItem>> states = new List<State<TKernelItem>>();
+            State<TKernelItem> state;
+            IDictionary<Token, Kernel<TKernelItem>> transitions;
+            Kernel<TKernelItem> kernel;
 
-            states.Add(new State(this.CreateKernel(), states.Count));
+            states.Add(new State<TKernelItem>(this.CreateKernel(), states.Count));
 
             while (s < states.Count)
             {
@@ -47,7 +48,7 @@ namespace CNFDotnet.Analysis.Parsing.LR
                     state.Items = this.CreateClosure(state.Kernel);
                     transitions = this.CreateTransitions(state.Items);
 
-                    state.Transitions = new Dictionary<Token, State>();
+                    state.Transitions = new Dictionary<Token, State<TKernelItem>>();
 
                     foreach (Token token in transitions.Keys)
                     {
@@ -64,7 +65,7 @@ namespace CNFDotnet.Analysis.Parsing.LR
 
                         if (i == states.Count)
                         {
-                            states.Add(new State(kernel, states.Count));
+                            states.Add(new State<TKernelItem>(kernel, states.Count));
                             state.Transitions.Add(token, states[states.Count - 1]);
                         }
                     }
@@ -77,11 +78,11 @@ namespace CNFDotnet.Analysis.Parsing.LR
         }
 
         public void ClassifyLR1<T1Action>(IParsingTable<T1Action> table)
-            where T1Action : BaseLR1Action
+            where T1Action : BaseLR1Action<TKernelItem>
         {
             foreach(T1Action action in table)
             {
-                foreach(KeyValuePair<Token, LR1ActionItem>  kv in action)
+                foreach(KeyValuePair<Token, LR1ActionItem<TKernelItem>>  kv in action)
                 {
                     if(kv.Value.Reduce is not null
                        && kv.Value.Reduce.Count > 1)
@@ -99,13 +100,13 @@ namespace CNFDotnet.Analysis.Parsing.LR
             }
         }
 
-        protected void AddReduceAction(BaseLR1Action actions, Token token, Production production)
+        protected void AddReduceAction(BaseLR1Action<TKernelItem> actions, Token token, Production production)
         {
-            LR1ActionItem actionItem;
+            LR1ActionItem<TKernelItem> actionItem;
 
             if(!actions.TryGetValue(token, out actionItem))
             {
-                actions.Add(token, (actionItem = new LR1ActionItem()));
+                actions.Add(token, (actionItem = new LR1ActionItem<TKernelItem>()));
             }
 
             if(actionItem.Reduce is null)

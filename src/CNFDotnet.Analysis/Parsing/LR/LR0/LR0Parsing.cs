@@ -21,10 +21,10 @@ namespace CNFDotnet.Analysis.Parsing.LR.LR0
             }
 
             ParsingTable<LR0Action> table = new ParsingTable<LR0Action>();
-            IList<State> automaton = this.CreateAutomaton();
+            IList<State<LR0KernelItem>> automaton = this.CreateAutomaton();
             LR0Action action;
 
-            foreach(State state in automaton)
+            foreach(State<LR0KernelItem> state in automaton)
             {
                 action = new LR0Action();
 
@@ -35,7 +35,7 @@ namespace CNFDotnet.Analysis.Parsing.LR.LR0
 
                 foreach(LR0KernelItem item in state.Items)
                 {
-                    if(item.Production is null)
+                    if(item.Production.Equals(Production.Null))
                     {
                         if(item.Index == 1)
                         {

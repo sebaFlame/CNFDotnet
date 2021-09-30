@@ -8,12 +8,18 @@ namespace CNFDotnet.Analysis.Grammar
     {
         public Token Left => this._left;
         public IList<Token> Right => this._right;
+        public int Index { get; private set; }
 
         internal CNFGrammar Grammar { get; set; }
-        public int Index { get; private set; }
+        internal static Production Null { get; }
 
         private Token _left;
         private IList<Token> _right;
+
+        static Production()
+        {
+            Null = new Production(new Token(string.Empty, TokenType.STRING), -1);
+        }
 
         private Production (Token? left, int index)
         {
@@ -162,10 +168,9 @@ namespace CNFDotnet.Analysis.Grammar
         }
 
         public bool Equals(Production other)
-        {
-            return this._left.Equals(other._left)
-                && this._right.SequenceEqual(other._right);
-        }
+            => ReferenceEquals(other, this)
+                || (this._left.Equals(other._left)
+                    && this._right.SequenceEqual(other._right));
 
         public override bool Equals(object? obj)
         {

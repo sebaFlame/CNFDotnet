@@ -7,28 +7,28 @@ using CNFDotnet.Analysis.Parsing.LR;
 
 namespace CNFDotnet.Analysis.Parsing.LR
 {
-    public abstract class BaseLR0Parsing<TAction> : BaseLRParsing<TAction>
+    public abstract class BaseLR0Parsing<TAction> : BaseLRParsing<TAction, LR0KernelItem>
         where TAction : class, IAction
     {
         public BaseLR0Parsing (CNFGrammar grammar) 
             : base(grammar)
         { }
 
-        protected override Kernel CreateKernel ()
+        protected override Kernel<LR0KernelItem> CreateKernel ()
         {
-            Kernel kernel = new Kernel();
-            kernel.Add(new LR0KernelItem(null, 0));
+            Kernel<LR0KernelItem> kernel = new Kernel<LR0KernelItem>();
+            kernel.Add(new LR0KernelItem(Production.Null, 0));
             return kernel;
         }
 
-        protected override Kernel CreateClosure (Kernel kernel)
+        protected override Kernel<LR0KernelItem> CreateClosure (Kernel<LR0KernelItem> kernel)
         {
             Token start = this.CNFGrammar.Start.Value;
-            Kernel result = new Kernel();
+            Kernel<LR0KernelItem> result = new Kernel<LR0KernelItem>();
             LR0KernelItem item;
             Token? token;
             HashSet<Production> used = new HashSet<Production>();
-            Kernel added;
+            Kernel<LR0KernelItem> added;
 
             for(int i = 0; i < kernel.Count; i++)
             {
@@ -37,13 +37,13 @@ namespace CNFDotnet.Analysis.Parsing.LR
 
             do
             {
-                added = new Kernel();
+                added = new Kernel<LR0KernelItem>();
 
                 for(int i = 0; i < result.Count; i++)
                 {
                     item = result[i] as LR0KernelItem;
 
-                    if(item.Production is null)
+                    if(item.Production.Equals(Production.Null))
                     {
                         if(item.Index == 0)
                         {
@@ -89,15 +89,15 @@ namespace CNFDotnet.Analysis.Parsing.LR
             return result;
         }
 
-        protected override IDictionary<Token, Kernel> CreateTransitions (Kernel closure)
+        protected override IDictionary<Token, Kernel<LR0KernelItem>> CreateTransitions (Kernel<LR0KernelItem> closure)
         {
             Token start = this.CNFGrammar.Start.Value;
-            Dictionary<Token, Kernel> result = new Dictionary<Token, Kernel>();
+            Dictionary<Token, Kernel<LR0KernelItem>> result = new Dictionary<Token, Kernel<LR0KernelItem>>();
             Token? token;
 
             foreach (LR0KernelItem item in closure)
             {
-                if(item.Production is null)
+                if(item.Production.Equals(Production.Null))
                 {
                     if(item.Index == 0)
                     {
@@ -124,7 +124,7 @@ namespace CNFDotnet.Analysis.Parsing.LR
 
                 if(!result.ContainsKey(token.Value))
                 {
-                    result.Add(token.Value, new Kernel());
+                    result.Add(token.Value, new Kernel<LR0KernelItem>());
                 }
 
                 result[token.Value].Add(new LR0KernelItem(item.Production, item.Index + 1));

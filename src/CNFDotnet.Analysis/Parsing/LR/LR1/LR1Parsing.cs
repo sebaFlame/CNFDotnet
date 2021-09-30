@@ -6,24 +6,24 @@ using CNFDotnet.Analysis.Grammar;
 
 namespace CNFDotnet.Analysis.Parsing.LR.LR1
 {
-    public class LR1Parsing : BaseLRParsing<LR1Action>
+    public class LR1Parsing : BaseLRParsing<LR1Action, LR1KernelItem>
     {
         public LR1Parsing(CNFGrammar cnfGrammar)
             : base(cnfGrammar)
         { }
 
-        protected override Kernel CreateKernel ()
+        protected override Kernel<LR1KernelItem> CreateKernel ()
         {
-            Kernel kernel = new Kernel();
-            kernel.Add(new LR1KernelItem(null, 0, new Token(TokenType.EOF)));
+            Kernel<LR1KernelItem> kernel = new Kernel<LR1KernelItem>();
+            kernel.Add(new LR1KernelItem(Production.Null, 0, new Token(TokenType.EOF)));
             return kernel;
         }
 
-        protected override Kernel CreateClosure (Kernel kernel)
+        protected override Kernel<LR1KernelItem> CreateClosure (Kernel<LR1KernelItem> kernel)
         {
             Token start = this.CNFGrammar.Start.Value;
             Dictionary<Production, HashSet<Token>> used = new Dictionary<Production, HashSet<Token>>();
-            Kernel result, added;
+            Kernel<LR1KernelItem> result, added;
             Token[] remaining, lookaheads;
             Token token;
 
@@ -32,7 +32,7 @@ namespace CNFDotnet.Analysis.Parsing.LR.LR1
                 used.Add(production, new HashSet<Token>());
             }
 
-            result = new Kernel();
+            result = new Kernel<LR1KernelItem>();
 
             foreach(LR1KernelItem lr1KernelItem in kernel)
             {
@@ -41,11 +41,11 @@ namespace CNFDotnet.Analysis.Parsing.LR.LR1
 
             do
             {
-                added = new Kernel();
+                added = new Kernel<LR1KernelItem>();
 
                 foreach(LR1KernelItem item in result)
                 {
-                    if(item.Production is null)
+                    if(item.Production.Equals(Production.Null))
                     {
 
                         if(item.Index == 0)
@@ -109,15 +109,15 @@ namespace CNFDotnet.Analysis.Parsing.LR.LR1
             return result;
         }
 
-        protected override IDictionary<Token, Kernel> CreateTransitions (Kernel closure)
+        protected override IDictionary<Token, Kernel<LR1KernelItem>> CreateTransitions (Kernel<LR1KernelItem> closure)
         {
-            Dictionary<Token, Kernel> result = new Dictionary<Token, Kernel>();
+            Dictionary<Token, Kernel<LR1KernelItem>> result = new Dictionary<Token, Kernel<LR1KernelItem>>();
             Token start = this.CNFGrammar.Start.Value;
             Token? token;
 
             foreach(LR1KernelItem item in closure)
             {
-                if(item.Production is null)
+                if(item.Production.Equals(Production.Null))
                 {
                     if(item.Index == 0)
                     {
@@ -144,7 +144,7 @@ namespace CNFDotnet.Analysis.Parsing.LR.LR1
 
                 if(!result.ContainsKey(token.Value))
                 {
-                    result.Add(token.Value, new Kernel());
+                    result.Add(token.Value, new Kernel<LR1KernelItem>());
                 }
 
                 result[token.Value].Add(new LR1KernelItem(item.Production, item.Index + 1, item.LookAhead));
@@ -165,23 +165,23 @@ namespace CNFDotnet.Analysis.Parsing.LR.LR1
                 return this.ParsingTable;
             }
 
-            IList<State> automaton = this.CreateAutomaton();
+            IList<State<LR1KernelItem>> automaton = this.CreateAutomaton();
             ParsingTable<LR1Action> table = new ParsingTable<LR1Action>();
             LR1Action actions;
             Token end = new Token(TokenType.EOF);
 
-            foreach(State state in automaton)
+            foreach(State<LR1KernelItem> state in automaton)
             {
                 actions = new LR1Action();
 
-                foreach(KeyValuePair<Token, State> kv in state.Transitions)
+                foreach(KeyValuePair<Token, State<LR1KernelItem>> kv in state.Transitions)
                 {
-                    actions.Add(kv.Key, new LR1ActionItem(kv.Value));
+                    actions.Add(kv.Key, new LR1ActionItem<LR1KernelItem>(kv.Value));
                 }
 
                 foreach(LR1KernelItem item in state.Items)
                 {
-                    if(item.Production is null)
+                    if(item.Production.Equals(Production.Null))
                     {
                         if(item.Index == 1)
                         {

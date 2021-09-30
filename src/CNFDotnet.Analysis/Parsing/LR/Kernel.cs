@@ -7,20 +7,21 @@ using CNFDotnet.Analysis.Grammar;
 
 namespace CNFDotnet.Analysis.Parsing.LR
 {
-    public class Kernel : IList<BaseKernelItem>, IEquatable<Kernel>
+    public class Kernel<TKernelItem> : IList<TKernelItem>, IEquatable<Kernel<TKernelItem>>
+        where TKernelItem : BaseKernelItem
     {
-        private IList<BaseKernelItem> _items;
+        private IList<TKernelItem> _items;
 
-        public BaseKernelItem this[int index] { get => this._items[index]; set => this._items[index] = value; }
+        public TKernelItem this[int index] { get => this._items[index]; set => this._items[index] = value; }
         public int Count => this._items.Count;
         public bool IsReadOnly => this._items.IsReadOnly;
 
         public Kernel ()
         {
-            this._items = new List<BaseKernelItem>();
+            this._items = new List<TKernelItem>();
         }
 
-        public void Add (BaseKernelItem item)
+        public void Add (TKernelItem item)
         {
             this._items.Add(item);
         }
@@ -30,32 +31,32 @@ namespace CNFDotnet.Analysis.Parsing.LR
             this._items.Clear();
         }
 
-        public bool Contains (BaseKernelItem item)
+        public bool Contains (TKernelItem item)
         {
             return this._items.Contains(item);
         }
 
-        public void CopyTo (BaseKernelItem[] array, int arrayIndex)
+        public void CopyTo (TKernelItem[] array, int arrayIndex)
         {
             this._items.CopyTo(array, arrayIndex);
         }
 
-        public IEnumerator<BaseKernelItem> GetEnumerator ()
+        public IEnumerator<TKernelItem> GetEnumerator ()
         {
             return this._items.GetEnumerator();
         }
 
-        public int IndexOf (BaseKernelItem item)
+        public int IndexOf (TKernelItem item)
         {
             return this._items.IndexOf(item);
         }
 
-        public void Insert (int index, BaseKernelItem item)
+        public void Insert (int index, TKernelItem item)
         {
             this._items.Insert(index, item);
         }
 
-        public bool Remove (BaseKernelItem item)
+        public bool Remove (TKernelItem item)
         {
             return this._items.Remove(item);
         }
@@ -70,7 +71,7 @@ namespace CNFDotnet.Analysis.Parsing.LR
             return this._items.GetEnumerator();
         }
 
-        public bool Equals (Kernel other)
+        public bool Equals (Kernel<TKernelItem> other)
         {
             if(other is null)
             {
@@ -78,8 +79,8 @@ namespace CNFDotnet.Analysis.Parsing.LR
             }
 
             //Kernel sequences can be in random order
-//            Dictionary<BaseKernelItem, int> cnt = new Dictionary<BaseKernelItem, int>();
-//            foreach(BaseKernelItem item in this)
+//            Dictionary<TKernelItem, int> cnt = new Dictionary<TKernelItem, int>();
+//            foreach(TKernelItem item in this)
 //            {
 //                if(cnt.ContainsKey(item))
 //                {
@@ -91,7 +92,7 @@ namespace CNFDotnet.Analysis.Parsing.LR
 //                }
 //            }
 //
-//            foreach(BaseKernelItem item in other)
+//            foreach(TKernelItem item in other)
 //            {
 //                if(cnt.ContainsKey(item))
 //                {
@@ -133,7 +134,7 @@ namespace CNFDotnet.Analysis.Parsing.LR
 
         public override bool Equals(object? obj)
         {
-            if(obj is not Kernel other)
+            if(obj is not Kernel<TKernelItem> other)
             {
                 return false;
             }

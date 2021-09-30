@@ -5,7 +5,7 @@ using CNFDotnet.Analysis.Grammar;
 
 namespace CNFDotnet.Analysis.Parsing.LR.SLR1
 {
-    public class SLR1Action : BaseLR1Action
+    public class SLR1Action : BaseLR1Action<LR0KernelItem>
     {
         public SLR1Action()
             : base()

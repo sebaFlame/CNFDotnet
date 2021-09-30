@@ -10,6 +10,7 @@ using CNFDotnet.Analysis.Parsing.LL;
 using CNFDotnet.Analysis.Parsing.LR.LR0;
 using CNFDotnet.Analysis.Parsing.LR.SLR1;
 using CNFDotnet.Analysis.Parsing.LR.LR1;
+using CNFDotnet.Analysis.Parsing.LR.LALR1;
 
 namespace CNFDotnet.Tests
 {
@@ -83,5 +84,8 @@ namespace CNFDotnet.Tests
 
         protected IParsing<IAction> CreateLR1Parsing(CNFGrammar cnfGrammar)
             => new LR1Parsing(cnfGrammar);
+
+        protected IParsing<IAction> CreateLALR1Parsing(CNFGrammar cnfGrammar)
+            => new LALR1Parsing(cnfGrammar);
     }
 }

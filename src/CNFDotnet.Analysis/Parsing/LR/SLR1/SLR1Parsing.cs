@@ -23,24 +23,24 @@ namespace CNFDotnet.Analysis.Parsing.LR.SLR1
                 return this.ParsingTable;
             }
 
-            IList<State> automaton = this.CreateAutomaton();
+            IList<State<LR0KernelItem>> automaton = this.CreateAutomaton();
             Dictionary<Token, HashSet<Token>> follow = this.CNFGrammar.FollowSet;
             Token end = new Token(TokenType.EOF);
             SLR1Action actions;
             ParsingTable<SLR1Action> table = new ParsingTable<SLR1Action>();
 
-            foreach(State state in automaton)
+            foreach(State<LR0KernelItem> state in automaton)
             {
                 actions = new SLR1Action();
 
-                foreach(KeyValuePair<Token, State> kv in state.Transitions)
+                foreach(KeyValuePair<Token, State<LR0KernelItem>> kv in state.Transitions)
                 {
-                    actions.Add(kv.Key, new LR1ActionItem(kv.Value));
+                    actions.Add(kv.Key, new LR1ActionItem<LR0KernelItem>(kv.Value));
                 }
 
                 foreach(LR0KernelItem item in state.Items)
                 {
-                    if(item.Production is null)
+                    if(item.Production.Equals(Production.Null))
                     {
                         if(item.Index == 1)
                         {
