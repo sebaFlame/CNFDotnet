@@ -1,31 +1,23 @@
 using System;
-
 using CNFDotnet.Analysis.Grammar;
-using CNFDotnet.Analysis.Parsing.LR;
 
 namespace CNFDotnet.Analysis.Parsing.LR
 {
-    public class LR0KernelItem : BaseKernelItem
+    public class LR0KernelItem : BaseLR0KernelItem, IEquatable<LR0KernelItem>
     {
-        public LR0KernelItem (Production production, int index) 
+        public LR0KernelItem(Production production, int index)
             : base(production, index)
-        {
-        }
+        { }
 
-        public override bool Equals (BaseKernelItem other)
-        {
-            if(other is null)
-            {
-                return false;
-            }
+        public bool Equals(LR0KernelItem other)
+            => base.Equals(other);
 
-            return object.Equals(this.Production, other.Production)
-                && this.Index == other.Index;
-        }
+#nullable enable annotations
+        public override bool Equals(object? obj)
+            => base.Equals(obj);
+#nullable restore annotations
 
-        protected override int GetKernelItemHashCode ()
-        {
-            return HashCode.Combine(this.Production, this.Index);
-        }
+        public override int GetHashCode()
+            => base.GetHashCode();
     }
 }

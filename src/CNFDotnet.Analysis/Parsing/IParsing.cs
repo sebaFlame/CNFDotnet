@@ -1,5 +1,3 @@
-using System;
-
 using CNFDotnet.Analysis.Grammar;
 
 namespace CNFDotnet.Analysis.Parsing
@@ -8,7 +6,7 @@ namespace CNFDotnet.Analysis.Parsing
         where TAction : class, IAction
     {
         CNFGrammar CNFGrammar { get; }
-        void Classify ();
-        IParsingTable<TAction> CreateParsingTable ();
+        void Classify();
+        IParsingTable<TAction> CreateParsingTable();
     }
 }

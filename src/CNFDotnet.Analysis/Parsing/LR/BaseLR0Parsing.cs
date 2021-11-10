@@ -1,50 +1,64 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 using CNFDotnet.Analysis.Grammar;
-using CNFDotnet.Analysis.Parsing;
-using CNFDotnet.Analysis.Parsing.LR;
 
 namespace CNFDotnet.Analysis.Parsing.LR
 {
-    public abstract class BaseLR0Parsing<TAction> : BaseLRParsing<TAction, LR0KernelItem>
+    public abstract class BaseLR0Parsing<TAction>
+        : BaseLRParsing<TAction, LR0KernelItem>
         where TAction : class, IAction
     {
-        public BaseLR0Parsing (CNFGrammar grammar) 
+        public BaseLR0Parsing(CNFGrammar grammar)
             : base(grammar)
         { }
 
-        protected override Kernel<LR0KernelItem> CreateKernel ()
-        {
-            Kernel<LR0KernelItem> kernel = new Kernel<LR0KernelItem>();
-            kernel.Add(new LR0KernelItem(Production.Null, 0));
-            return kernel;
-        }
+        protected override Kernel<LR0KernelItem> CreateInitialKernel()
+            => new Kernel<LR0KernelItem>
+                {
+                    new LR0KernelItem(Production.Null, 0)
+                };
 
-        protected override Kernel<LR0KernelItem> CreateClosure (Kernel<LR0KernelItem> kernel)
+        protected override Kernel<LR0KernelItem> CreateClosure
+            (Kernel<LR0KernelItem> kernel)
         {
-            Token start = this.CNFGrammar.Start.Value;
+            Token start = this.CNFGrammar.ComputeStartNonTerminal();
             Kernel<LR0KernelItem> result = new Kernel<LR0KernelItem>();
             LR0KernelItem item;
             Token? token;
             HashSet<Production> used = new HashSet<Production>();
-            Kernel<LR0KernelItem> added;
+            int initialCount;
 
+            //The closure exists of the existing items
             for(int i = 0; i < kernel.Count; i++)
             {
-                result.Add(new LR0KernelItem(kernel[i].Production, kernel[i].Index));
+                //TODO: reuse existing kernel item
+                result.Add
+                (
+                    new LR0KernelItem
+                    (
+                        kernel[i].Production,
+                        kernel[i].Index)
+                    );
             }
 
+            //Keep returning items while relations are being found
             do
             {
-                added = new Kernel<LR0KernelItem>();
+                //Save the current count to check if new items have been added
+                initialCount = result.Count;
 
-                for(int i = 0; i < result.Count; i++)
+                //Iterate over the entire (current) result set. Use a for loop
+                //using initalCount, because the collections gets modified
+                for(int i = 0; i < initialCount; i++)
                 {
-                    item = result[i] as LR0KernelItem;
+                    //Find the current token at the index
+                    item = result[i];
 
+                    //If the current production is null, the start token is
+                    //needed
                     if(item.Production.Equals(Production.Null))
                     {
+                        //Only if the index is 0
                         if(item.Index == 0)
                         {
                             token = start;
@@ -54,83 +68,48 @@ namespace CNFDotnet.Analysis.Parsing.LR
                             token = null;
                         }
                     }
-                    else if(item.Index < item.Production.Right.Count)
+                    //If the index is still within the body of the production
+                    else if(item.Index < item.Production.Body.Count)
                     {
-                        token = item.Production.Right[item.Index];
+                        token = item.Production.Body[item.Index];
                     }
+                    //Else the end of the productions has been found
                     else
                     {
                         token = null;
                     }
 
+                    //If no token has been found, move to the next result item
                     if(!token.HasValue)
                     {
                         continue;
                     }
 
-                    foreach(Production production in this.CNFGrammar.Productions)
+                    //Find every unused production with token as the head and
+                    //initalise a new kernel item at index 0 of that production
+                    foreach(Production production
+                            in this.CNFGrammar.Productions)
                     {
                         if(!used.Contains(production)
-                            && production.Left == token.Value)
+                            && production.Head.Equals(token.Value))
                         {
-                            added.Add(new LR0KernelItem(production, 0));
+                            result.Add(new LR0KernelItem(production, 0));
                             used.Add(production);
                         }
                     }
                 }
-
-                for(int i = 0; i < added.Count; i++)
-                {
-                    result.Add(added[i]);
-                }
-
-            } while(added.Count > 0);
+            } while(result.Count > initialCount);
 
             return result;
         }
 
-        protected override IDictionary<Token, Kernel<LR0KernelItem>> CreateTransitions (Kernel<LR0KernelItem> closure)
-        {
-            Token start = this.CNFGrammar.Start.Value;
-            Dictionary<Token, Kernel<LR0KernelItem>> result = new Dictionary<Token, Kernel<LR0KernelItem>>();
-            Token? token;
+        protected override LR0KernelItem CreateTransitionKernelItem
+            (LR0KernelItem item)
+            => new LR0KernelItem
+            (
+                item.Production,
+                item.Index + 1
+            );
 
-            foreach (LR0KernelItem item in closure)
-            {
-                if(item.Production.Equals(Production.Null))
-                {
-                    if(item.Index == 0)
-                    {
-                        token = start;
-                    }
-                    else
-                    {
-                        token = null;
-                    }
-                }
-                else if(item.Index < item.Production.Right.Count)
-                {
-                    token = item.Production.Right[item.Index];
-                }
-                else
-                {
-                    token = null;
-                }
-
-                if(!token.HasValue)
-                {
-                    continue;
-                }
-
-                if(!result.ContainsKey(token.Value))
-                {
-                    result.Add(token.Value, new Kernel<LR0KernelItem>());
-                }
-
-                result[token.Value].Add(new LR0KernelItem(item.Production, item.Index + 1));
-            }
-
-            return result;
-        }
     }
 }

@@ -1,25 +1,29 @@
 ﻿using System.Text;
 
-//Disable waring about return types not being assigned
-#pragma warning disable IDE0058
-
 namespace CNFDotnet.Analysis.Grammar
 {
+    // Grammar lexer base class
     public abstract class BaseLexer
     {
-        protected abstract bool GetNextChar (out char? ch);
-        protected abstract bool PreviousPosition ();
+        // Get the next char
+        protected abstract bool GetNextChar(out char? ch);
+        // Return to the previous position
+        protected abstract bool PreviousPosition();
 
         private readonly StringBuilder _cache;
 
-        protected BaseLexer () => this._cache = new StringBuilder();
+        protected BaseLexer()
+        {
+            this._cache = new StringBuilder();
+        }
 
-        public Token Next ()
+        public Token Next()
         {
             char ch;
             char? outCh;
 
-            if (!this.GetNextChar(out outCh))
+            // If no new character is found return an EOF
+            if(!this.GetNextChar(out outCh))
             {
                 return new Token(TokenType.EOF);
             }
@@ -28,23 +32,30 @@ namespace CNFDotnet.Analysis.Grammar
                 ch = outCh.Value;
             }
 
-            if (IsEndOfLine(ch))
+            if(BaseLexer.IsEndOfLine(ch))
             {
                 return new Token(ch, TokenType.EOL);
             }
-            else if (IsWhiteSpace(ch))
+            else if(BaseLexer.IsWhiteSpace(ch))
             {
                 return new Token(ch, TokenType.WHITESPACE);
             }
-            else if (StartsArrow(ch))
+            // Check if the current character might be the start of an arrow
+            // Currently "-" & "=" are supported
+            else if(BaseLexer.StartsArrow(ch))
             {
                 this._cache.Append(ch);
 
-                if (!this.GetNextChar(out outCh))
+                // If no next character is found, return as a string type
+                if(!this.GetNextChar(out outCh))
                 {
                     try
                     {
-                        return new Token(this._cache.ToString(), TokenType.STRING);
+                        return new Token
+                        (
+                            this._cache.ToString(),
+                            TokenType.STRING
+                        );
                     }
                     finally
                     {
@@ -52,32 +63,40 @@ namespace CNFDotnet.Analysis.Grammar
                         this.PreviousPosition();
                     }
                 }
+                // If a new character is found
                 else
                 {
                     ch = outCh.Value;
-                    if (CompletesArrow(ch))
+                    // Check if it can complete an arrow
+                    // Currently only ">" is supported
+                    if(BaseLexer.CompletesArrow(ch))
                     {
                         this._cache.Append(ch);
                         try
                         {
-                            return new Token(this._cache.ToString(), TokenType.ARROW);
+                            return new Token
+                            (
+                                this._cache.ToString(),
+                                TokenType.ARROW
+                            );
                         }
                         finally
                         {
                             this._cache.Clear();
                         }
                     }
+                    // Else return a new STRING token
                     else
                     {
                         return this.GetStringToken(ch);
                     }
                 }
             }
-            else if (IsEmpty(ch))
+            else if(BaseLexer.IsEmpty(ch))
             {
                 return new Token(ch, TokenType.EMPTY);
             }
-            else if (IsChoice(ch))
+            else if(BaseLexer.IsChoice(ch))
             {
                 return new Token(ch, TokenType.CHOICE);
             }
@@ -87,7 +106,9 @@ namespace CNFDotnet.Analysis.Grammar
             }
         }
 
-        private Token GetStringToken (char ch)
+        // Create a STRING token from the current cache, the character passed
+        // and any non EOF, EOL, CHOICE that follows
+        private Token GetStringToken(char ch)
         {
             char? outCh;
 
@@ -95,7 +116,7 @@ namespace CNFDotnet.Analysis.Grammar
             {
                 this._cache.Append(ch);
 
-                if (!this.GetNextChar(out outCh))
+                if(!this.GetNextChar(out outCh))
                 {
                     break;
                 }
@@ -104,9 +125,9 @@ namespace CNFDotnet.Analysis.Grammar
                     ch = outCh.Value;
                 }
 
-            } while (!(IsEndOfLine(ch)
-                    || IsWhiteSpace(ch)
-                    || IsChoice(ch)));
+            } while(!(BaseLexer.IsEndOfLine(ch)
+                    || BaseLexer.IsWhiteSpace(ch)
+                    || BaseLexer.IsChoice(ch)));
             try
             {
                 return new Token(this._cache.ToString(), TokenType.STRING);
@@ -118,11 +139,11 @@ namespace CNFDotnet.Analysis.Grammar
             }
         }
 
-        private static bool IsEndOfLine (char ch) => ch == '\n';
-        private static bool IsWhiteSpace (char ch) => char.IsWhiteSpace(ch);
-        private static bool IsChoice (char ch) => ch == '|';
-        private static bool StartsArrow (char ch) => ch is '-' or '=';
-        private static bool CompletesArrow (char ch) => ch == '>';
-        private static bool IsEmpty (char ch) => ch == 'ε';
+        private static bool IsEndOfLine(char ch) => ch == '\n';
+        private static bool IsWhiteSpace(char ch) => char.IsWhiteSpace(ch);
+        private static bool IsChoice(char ch) => ch == '|';
+        private static bool StartsArrow(char ch) => ch is '-' or '=';
+        private static bool CompletesArrow(char ch) => ch == '>';
+        private static bool IsEmpty(char ch) => ch == 'ε';
     }
 }

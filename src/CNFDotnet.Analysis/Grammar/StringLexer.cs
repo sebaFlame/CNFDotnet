@@ -2,9 +2,10 @@ using System;
 
 namespace CNFDotnet.Analysis.Grammar
 {
+    //A lexer implementation to parse a string
     public class StringLexer : BaseLexer
     {
-        private ReadOnlyMemory<char> _grammar;
+        private readonly ReadOnlyMemory<char> _grammar;
         private int _position;
 
         public StringLexer(string grammar)

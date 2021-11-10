@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 using Xunit;
 using Xunit.Abstractions;
@@ -23,7 +22,7 @@ namespace CNFDotnet.Tests
             this.TestOutputHelper = testOutputHelper;
         }
 
-        protected CNFGrammar GenerateGrammar (string grammar)
+        protected CNFGrammar GenerateGrammar(string grammar)
         {
             Token token;
             CNFGrammar cnfGrammar;
@@ -33,7 +32,7 @@ namespace CNFDotnet.Tests
             BaseLexer lexer = new StringLexer(grammar);
 
             this.TestOutputHelper.WriteLine("Tokenizing grammar");
-            while ((token = lexer.Next()).TokenType != TokenType.EOF)
+            while((token = lexer.Next()).TokenType != TokenType.EOF)
             {
                 tokens.Add(token);
             }
@@ -45,47 +44,31 @@ namespace CNFDotnet.Tests
 
             this.TestOutputHelper.WriteLine("Validating grammar");
 
-            cnfGrammar.ComputeStartNonTerminal();
-            Assert.NotNull(cnfGrammar.Start);
-
-            cnfGrammar.ComputeNonTerminals();
-            Assert.NotEmpty(cnfGrammar.NonTerminals);
-
-            cnfGrammar.ComputeTerminals();
-            Assert.NotEmpty(cnfGrammar.Terminals);
-
-            cnfGrammar.ComputeUnreachable();
-            cnfGrammar.ComputeUnrealizable();
-            cnfGrammar.ComputeNullable();
-
-            IReadOnlyList<Token> firstCycle = cnfGrammar.ComputeFirstCycle();
-            if(firstCycle is not null)
-            {
-                Assert.Empty(firstCycle);
-            }
-
-            cnfGrammar.ComputeFirstSet();
-            Assert.NotEmpty(cnfGrammar.FirstSet);
-
-            cnfGrammar.ComputeFollowSet();
-            Assert.NotEmpty(cnfGrammar.FollowSet);
+            //Assert.Empty(cnfGrammar.ComputeUnreachable());
+            //Assert.Empty(cnfGrammar.ComputeUnrealizable());
+            Assert.Empty(cnfGrammar.ComputeFirstCycle());
 
             return cnfGrammar;
         }
 
-        protected IParsing<IAction> CreateLL1Parsing (CNFGrammar cnfGrammar)
+        protected static IParsing<LL1Action> CreateLL1Parsing
+            (CNFGrammar cnfGrammar)
             => new LL1Parsing(cnfGrammar);
 
-        protected IParsing<IAction> CreateLR0Parsing (CNFGrammar cnfGrammar)
+        protected static IParsing<LR0Action> CreateLR0Parsing
+            (CNFGrammar cnfGrammar)
             => new LR0Parsing(cnfGrammar);
 
-        protected IParsing<IAction> CreateSLR1Parsing (CNFGrammar cnfGrammar)
+        protected static IParsing<SLR1Action> CreateSLR1Parsing
+            (CNFGrammar cnfGrammar)
             => new SLR1Parsing(cnfGrammar);
 
-        protected IParsing<IAction> CreateLR1Parsing(CNFGrammar cnfGrammar)
+        protected static IParsing<LR1Action> CreateLR1Parsing
+            (CNFGrammar cnfGrammar)
             => new LR1Parsing(cnfGrammar);
 
-        protected IParsing<IAction> CreateLALR1Parsing(CNFGrammar cnfGrammar)
+        protected static IParsing<LALR1Action> CreateLALR1Parsing
+            (CNFGrammar cnfGrammar)
             => new LALR1Parsing(cnfGrammar);
     }
 }

@@ -1,19 +1,22 @@
-using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace CNFDotnet.Analysis.Grammar
 {
     public class Relation
     {
+        //A dictionary signifying a relation between a token and 0 or more
+        //other tokens
         public Dictionary<Token, HashSet<Token>> Relations => this._relations;
 
-        private Dictionary<Token, HashSet<Token>> _relations;
+        private readonly Dictionary<Token, HashSet<Token>> _relations;
 
         public Relation()
         {
             this._relations = new Dictionary<Token, HashSet<Token>>();
         }
 
+        //Add a (right) relation to the left token
         public void AddRelation(Token left, Token right)
         {
             HashSet<Token> relations;
@@ -26,11 +29,16 @@ namespace CNFDotnet.Analysis.Grammar
             relations.Add(right);
         }
 
-        public static Dictionary<Token, HashSet<Token>> Closure(Relation relation)
+        /* Compute all possible relations for each token, while keeping order of
+         * the relations (transitive closure using Floyd-Warshall) */
+        public static Dictionary<Token, HashSet<Token>> Closure
+            (Relation relation)
         {
             HashSet<Token> keys = new HashSet<Token>();
-            Dictionary<Token, HashSet<Token>> result = new Dictionary<Token, HashSet<Token>>();
+            Dictionary<Token, HashSet<Token>> result
+                = new Dictionary<Token, HashSet<Token>>();
 
+            //Copy the relation and build the set of unique keys
             foreach(Token i in relation.Relations.Keys)
             {
                 keys.Add(i);
@@ -40,6 +48,8 @@ namespace CNFDotnet.Analysis.Grammar
                 foreach(Token j in relation.Relations[i])
                 {
                     keys.Add(j);
+
+                    //Add the existing relation 
                     if(relation.Relations[i].Contains(j))
                     {
                         result[i].Add(j);
@@ -47,6 +57,7 @@ namespace CNFDotnet.Analysis.Grammar
                 }
             }
 
+            //Initialize all relation hashsets
             foreach(Token i in keys)
             {
                 if(!result.ContainsKey(i))
@@ -55,13 +66,14 @@ namespace CNFDotnet.Analysis.Grammar
                 }
             }
 
+            //Perform the transitive closure and add new relations
             foreach(Token k in keys)
             {
                 foreach(Token i in keys)
                 {
                     foreach(Token j in keys)
                     {
-                        if(result[i].Contains(j) 
+                        if(result[i].Contains(j)
                             || (result[i].Contains(k)
                                 && result[k].Contains(j)))
                         {
@@ -74,11 +86,18 @@ namespace CNFDotnet.Analysis.Grammar
             return result;
         }
 
-        public static Dictionary<Token, HashSet<Token>> Propagate(Relation immediate, Relation propagation)
+        //Propagate the immediate relation using the (closure of the)
+        //propagation relation
+        public static Dictionary<Token, HashSet<Token>> Propagate
+            (Relation immediate, Relation propagation)
         {
-            Dictionary<Token, HashSet<Token>> result = new Dictionary<Token, HashSet<Token>>();
-            Dictionary<Token, HashSet<Token>> closed = Closure(propagation);
+            Dictionary<Token, HashSet<Token>> result
+                = new Dictionary<Token, HashSet<Token>>();
+            //Compute all possible relations between the propagation set
+            Dictionary<Token, HashSet<Token>> closed
+                = Relation.Closure(propagation);
 
+            //Add the immediate tokens and their relation to the result list
             foreach(Token k in immediate.Relations.Keys)
             {
                 result.Add(k, new HashSet<Token>());
@@ -92,79 +111,108 @@ namespace CNFDotnet.Analysis.Grammar
                 }
             }
 
+            //Merge the immediate set and the propagation set
             foreach(Token s in closed.Keys)
             {
-                if(!closed.ContainsKey(s))
-                {
-                    continue;
-                } 
-               
-                if(!result.ContainsKey(s))
-                {
-                    result.Add(s, new HashSet<Token>()); 
-                }
-
                 foreach(Token t in closed[s])
                 {
+                    //Only use tokens that exist in the immediate set
                     if(!immediate.Relations.ContainsKey(t))
                     {
                         continue;
                     }
 
+                    //Initialize empty hashset for result set
+                    if(!result.ContainsKey(s))
+                    {
+                        result.Add(s, new HashSet<Token>());
+                    }
+
+                    //If t has a relation to s and u has a relation to t, then
+                    //t has a relation to s 
+                    //t -> s
+                    //u -> t
+                    //u -> s 
                     foreach(Token u in immediate.Relations[t])
                     {
-                        if(immediate.Relations[t].Contains(u))
-                        {
-                            result[s].Add(u);
-                        }
+                        result[s].Add(u);
                     }
                 }
             }
 
             return result;
         }
-        
-        public static List<Token> Cycle(Relation relation)
+
+        //If the graph of the relation has a cycle, return the first cycle we
+        //find. Otherwise return an empty list. A cyle is a token with a direct
+        //relation on itself (through one or more propagated relations).
+        public static IEnumerable<Token> Cycle(Relation relation)
         {
-            List<Token> dfs(Token k, List<Token> v)
+            IEnumerable<Token> dfs(Token k, List<Token> v)
             {
+                //If no relations are defined for k, return empty set
                 if(!relation.Relations.ContainsKey(k))
                 {
-                    return null;
+                    return Enumerable.Empty<Token>();
                 }
 
+                //Find the relations of that token k
                 foreach(Token l in relation.Relations[k])
                 {
+                    //If the relation already exists, a cycle has been detected
                     if(v.Contains(l))
                     {
-                        v.Add(k);
-                        if(l != k)
+                        if(l == k)
                         {
-                            v.Add(l);
+                            //Add the start token (k)
+                            return new List<Token>(v)
+                            {
+                                k
+                            };
                         }
-
-                        return v;
+                        else
+                        {
+                            //Add the start token k and the current token
+                            return new List<Token>(v)
+                            {
+                                k,
+                                l
+                            };
+                        }
                     }
 
-                    v.Add(k);
-                    return dfs(l, v);
+                    //Recurse further into element l
+                    IEnumerable<Token> w = dfs
+                    (
+                        l,
+                        new List<Token>(v)
+                        {
+                            k
+                        }
+                    );
+
+                    if(w.Any())
+                    {
+                        return w;
+                    }
                 }
 
-                return null;
+                return Enumerable.Empty<Token>();
             }
 
-            List<Token> result;
+            IEnumerable<Token> result;
 
+            //Foreach token in a relation
             foreach(Token token in relation.Relations.Keys)
             {
                 result = dfs(token, new List<Token>());
-                if(!(result is null))
+                if(result.Any())
                 {
                     return result;
                 }
             }
 
-            return null;
+            return Enumerable.Empty<Token>();
         }
     }
 }

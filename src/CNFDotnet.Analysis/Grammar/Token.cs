@@ -2,13 +2,17 @@ using System;
 
 namespace CNFDotnet.Analysis.Grammar
 {
+    //Represents a token found in a CNF Grammar consisting of a value and a
+    //token type
     public struct Token : IEquatable<Token>
     {
         public string Value => this._value;
         public TokenType TokenType => this._tokenType;
 
-        private string _value;
-        private TokenType _tokenType;
+        internal static Token Null => default;
+
+        private readonly string _value;
+        private readonly TokenType _tokenType;
 
         public Token(string value, TokenType tokenType)
         {
@@ -28,14 +32,18 @@ namespace CNFDotnet.Analysis.Grammar
             this._tokenType = tokenType;
         }
 
+#pragma warning disable CA1309
+        //_value can be null
         public bool Equals(Token other)
             => this._tokenType == other._tokenType
                 && string.Equals(this._value, other._value);
+#pragma warning restore CA1309
 
         public override int GetHashCode()
             => this._value.GetHashCode()
                 + (278901 * (int)this._tokenType);
 
+#nullable enable annotations
         public override bool Equals(object? obj)
         {
             if(obj is not Token token)
@@ -45,12 +53,28 @@ namespace CNFDotnet.Analysis.Grammar
 
             return this.Equals(token);
         }
+#nullable restore annotations
 
         public static bool operator ==(in Token left, in Token right)
             => left.Equals(right);
 
         public static bool operator !=(in Token left, in Token right)
             => !left.Equals(right);
+
+        public static implicit operator Token(string str)
+        {
+            if(string.Equals(str, "$", StringComparison.Ordinal))
+            {
+                return new Token(TokenType.EOF);
+            }
+            else
+            {
+                return new Token(str, TokenType.STRING);
+            }
+        }
+
+        public static implicit operator string(Token token)
+            => token.ToString();
 
         public override string ToString()
         {
